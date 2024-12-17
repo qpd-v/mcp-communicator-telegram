@@ -1,0 +1,56 @@
+{
+  "name": "mcp-communicator-telegram",
+  "version": "0.1.0",
+  "description": "MCP server for communicating with users through Telegram bots",
+  "main": "build/index.js",
+  "type": "commonjs",
+  "bin": {
+    "mcptelegram": "./build/index.js",
+    "mcptelegram-chatid": "./build/get-chat-id.js"
+  },
+  "files": [
+    "build",
+    "README.md",
+    "LICENSE",
+    ".env.example"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qpd-v/mcp-communicator-telegram.git"
+  },
+  "bugs": {
+    "url": "https://github.com/qpd-v/mcp-communicator-telegram/issues"
+  },
+  "homepage": "https://github.com/qpd-v/mcp-communicator-telegram#readme",
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/index.js",
+    "dev": "tsc && node build/index.js",
+    "watch": "tsc -w",
+    "clean": "rimraf build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "telegram",
+    "bot",
+    "communication",
+    "chat",
+    "messaging",
+    "ai",
+    "claude"
+  ],
+  "author": "qpd-v",
+  "license": "ISC",
+  "dependencies": {
+    "node-telegram-bot-api": "^0.64.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "@types/node-telegram-bot-api": "^0.64.1",
+    "typescript": "^5.3.3",
+    "rimraf": "^5.0.5"
+  }
+}
