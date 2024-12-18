@@ -24,7 +24,7 @@ npx mcptelegram-chatid
 ## Features
 
 - Ask questions to users through Telegram
-- Receive responses asynchronously
+- Receive responses asynchronously (waits indefinitely for response)
 - Support for reply-based message tracking
 - Secure chat ID validation
 - Error handling and logging
