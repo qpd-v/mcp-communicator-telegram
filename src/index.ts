@@ -192,7 +192,7 @@ class McpServer {
             protocolVersion: "2024-11-05",
             serverInfo: {
               name: "mcp-communicator-telegram",
-              version: "0.1.1"
+              version: "0.1.2"
             },
             capabilities: {
               tools: {
