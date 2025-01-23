@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import TelegramBot = require('node-telegram-bot-api');
+import * as fs from 'fs';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -158,6 +159,23 @@ async function askUser(params: AskUserParams): Promise<string> {
   }
 }
 
+async function sendFile(params: { filePath: string }): Promise<void> {
+  if (!bot) {
+    throw new Error('Bot not initialized');
+  }
+
+  const { filePath } = params;
+
+  try {
+    const fileStream = fs.createReadStream(filePath);
+    await bot.sendDocument(parseInt(validatedChatId), fileStream);
+    console.log('File sent successfully');
+  } catch (error: any) {
+    console.error('Error in sendFile:', error);
+    throw new Error(`Failed to send file: ${error.message}`);
+  }
+}
+
 // MCP Server Implementation
 class McpServer {
   private buffer = '';
@@ -257,6 +275,20 @@ class McpServer {
                   },
                   required: ["message"]
                 }
+              },
+              {
+                name: "send_file",
+                description: "Send a file to the user via Telegram",
+                inputSchema: {
+                  type: "object",
+                  properties: {
+                    filePath: {
+                      type: "string",
+                      description: "The path to the file to send"
+                    }
+                  },
+                  required: ["filePath"]
+                }
               }
             ]
           }
@@ -289,6 +321,20 @@ class McpServer {
                   content: [{
                     type: "text",
                     text: "Notification sent successfully"
+                  }]
+                }
+              });
+              break;
+
+            case 'send_file':
+              await sendFile(request.params.arguments);
+              this.sendResponse({
+                jsonrpc: "2.0",
+                id: request.id,
+                result: {
+                  content: [{
+                    type: "text",
+                    text: "File sent successfully"
                   }]
                 }
               });
