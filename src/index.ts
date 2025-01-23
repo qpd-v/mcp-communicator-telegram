@@ -104,6 +104,26 @@ interface AskUserParams {
   question: string;
 }
 
+interface NotifyUserParams {
+  message: string;
+}
+
+async function notifyUser(params: NotifyUserParams): Promise<void> {
+  if (!bot) {
+    throw new Error('Bot not initialized');
+  }
+
+  const { message } = params;
+  
+  try {
+    await bot.sendMessage(parseInt(validatedChatId), message);
+    console.log('Notification sent successfully');
+  } catch (error: any) {
+    console.error('Error in notifyUser:', error);
+    throw new Error(`Failed to send notification: ${error.message}`);
+  }
+}
+
 async function askUser(params: AskUserParams): Promise<string> {
   if (!bot) {
     throw new Error('Bot not initialized');
@@ -209,37 +229,74 @@ class McpServer {
           jsonrpc: "2.0",
           id: request.id,
           result: {
-            tools: [{
-              name: "ask_user",
-              description: "Ask the user a question via Telegram and wait for their response",
-              inputSchema: {
-                type: "object",
-                properties: {
-                  question: {
-                    type: "string",
-                    description: "The question to ask the user"
-                  }
-                },
-                required: ["question"]
+            tools: [
+              {
+                name: "ask_user",
+                description: "Ask the user a question via Telegram and wait for their response",
+                inputSchema: {
+                  type: "object",
+                  properties: {
+                    question: {
+                      type: "string",
+                      description: "The question to ask the user"
+                    }
+                  },
+                  required: ["question"]
+                }
+              },
+              {
+                name: "notify_user",
+                description: "Send a notification message to the user via Telegram (no response required)",
+                inputSchema: {
+                  type: "object",
+                  properties: {
+                    message: {
+                      type: "string",
+                      description: "The message to send to the user"
+                    }
+                  },
+                  required: ["message"]
+                }
               }
-            }]
+            ]
           }
         });
         break;
 
       case 'tools/call':
         try {
-          const answer = await askUser(request.params.arguments);
-          this.sendResponse({
-            jsonrpc: "2.0",
-            id: request.id,
-            result: {
-              content: [{
-                type: "text",
-                text: answer
-              }]
-            }
-          });
+          switch (request.params.name) {
+            case 'ask_user':
+              const answer = await askUser(request.params.arguments);
+              this.sendResponse({
+                jsonrpc: "2.0",
+                id: request.id,
+                result: {
+                  content: [{
+                    type: "text",
+                    text: answer
+                  }]
+                }
+              });
+              break;
+
+            case 'notify_user':
+              await notifyUser(request.params.arguments);
+              this.sendResponse({
+                jsonrpc: "2.0",
+                id: request.id,
+                result: {
+                  content: [{
+                    type: "text",
+                    text: "Notification sent successfully"
+                  }]
+                }
+              });
+              break;
+
+            default:
+              throw new Error(`Unknown tool: ${request.params.name}`);
+          }
         } catch (error: any) {
           this.sendResponse({
             jsonrpc: "2.0",
