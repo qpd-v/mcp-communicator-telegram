@@ -5,8 +5,8 @@
   "main": "build/index.js",
   "type": "commonjs",
   "bin": {
-    "mcptelegram": "./build/index.js",
-    "mcptelegram-chatid": "./build/get-chat-id.js"
+    "mcptelegram": "build/index.js",
+    "mcptelegram-chatid": "build/get-chat-id.js"
   },
   "files": [
     "build",
