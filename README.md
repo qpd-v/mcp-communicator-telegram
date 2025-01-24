@@ -1,6 +1,6 @@
 # MCP Communicator (Telegram)
 
-An MCP server that enables communication with users through Telegram. This server provides a tool to ask questions to users and receive their responses via a Telegram bot.
+An MCP server that enables communication with users through Telegram. This server provides tools to interact with users via a Telegram bot, including asking questions, sending notifications, sharing files, and creating project archives.
 
 ## Installation
 
@@ -24,6 +24,9 @@ npx mcptelegram-chatid
 ## Features
 
 - Ask questions to users through Telegram
+- Send notifications to users (no response required)
+- Send files to users via Telegram
+- Create and send project zip files (respecting .gitignore)
 - Receive responses asynchronously (waits indefinitely for response)
 - Support for reply-based message tracking
 - Secure chat ID validation
@@ -122,6 +125,93 @@ const response = await use_mcp_tool({
 });
 ```
 
+### notify_user
+
+Sends a notification message to the user via Telegram (no response required).
+
+Input Schema:
+```json
+{
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string",
+      "description": "The message to send to the user"
+    }
+  },
+  "required": ["message"]
+}
+```
+
+Example usage:
+```typescript
+await use_mcp_tool({
+  server_name: "mcp-communicator-telegram",
+  tool_name: "notify_user",
+  arguments: {
+    message: "Task completed successfully!"
+  }
+});
+```
+
+### send_file
+
+Sends a file to the user via Telegram.
+
+Input Schema:
+```json
+{
+  "type": "object",
+  "properties": {
+    "filePath": {
+      "type": "string",
+      "description": "The path to the file to send"
+    }
+  },
+  "required": ["filePath"]
+}
+```
+
+Example usage:
+```typescript
+await use_mcp_tool({
+  server_name: "mcp-communicator-telegram",
+  tool_name: "send_file",
+  arguments: {
+    filePath: "path/to/file.txt"
+  }
+});
+```
+
+### zip_project
+
+Creates a zip file of the entire project (respecting .gitignore patterns) and sends it to the user via Telegram.
+
+Input Schema:
+```json
+{
+  "type": "object",
+  "properties": {},
+  "required": []
+}
+```
+
+Example usage:
+```typescript
+await use_mcp_tool({
+  server_name: "mcp-communicator-telegram",
+  tool_name: "zip_project",
+  arguments: {}
+});
+```
+
+Features:
+- Creates a single zip file containing all project files
+- Respects .gitignore patterns
+- Maintains correct file paths in the archive
+- Automatically cleans up the zip file after sending
+- Handles files up to 2GB in size
+
 ## Development
 
 Build the project:
@@ -161,4 +251,4 @@ qpd-v
 
 ## Version
 
-0.1.5
+0.2.0  # Major version bump for new features: notify_user, send_file, and zip_project tools
