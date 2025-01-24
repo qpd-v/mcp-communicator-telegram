@@ -187,8 +187,9 @@ import ignore from 'ignore';
 
 import * as path from 'path';
 
-async function zipProject(): Promise<void> {
-  const workingDir = 'c:/mcp-communicator-telegram';
+async function zipProject(params: { directory?: string } = {}): Promise<void> {
+  const workingDir = params.directory || process.cwd();
+  const projectName = path.basename(workingDir);
   const ig = ignore();
   const gitignorePath = path.join(workingDir, '.gitignore');
   const gitignoreContent = fs.existsSync(gitignorePath) ?
@@ -196,7 +197,7 @@ async function zipProject(): Promise<void> {
     '';
   ig.add(gitignoreContent);
 
-  const outputPath = path.join(workingDir, 'project.zip');
+  const outputPath = path.join(workingDir, `${projectName}-project.zip`);
   
   await new Promise<void>((resolve, reject) => {
     const output = fs.createWriteStream(outputPath);
@@ -308,7 +309,7 @@ class McpServer {
             protocolVersion: "2024-11-05",
             serverInfo: {
               name: "mcp-communicator-telegram",
-              version: "0.2.0"
+              version: "0.2.1"
             },
             capabilities: {
               tools: {
@@ -370,10 +371,15 @@ class McpServer {
               },
               {
                 name: "zip_project",
-                description: "Zip the entire project directory and send it to the user",
+                description: "Zip a project directory and send it to the user",
                 inputSchema: {
                   type: "object",
-                  properties: {},
+                  properties: {
+                    directory: {
+                      type: "string",
+                      description: "Directory to zip (defaults to current working directory)"
+                    }
+                  },
                   required: []
                 }
               }
@@ -428,45 +434,48 @@ class McpServer {
               break;
 
             case 'zip_project':
-              const workingDir = 'c:/mcp-communicator-telegram';
-              const zipFilePath = path.join(workingDir, 'project.zip');
-              
-              // Clean up any existing zip file first
-              try {
-                if (fs.existsSync(zipFilePath)) {
-                  fs.unlinkSync(zipFilePath);
-                }
-              } catch (error) {
-                console.error('Error cleaning up existing zip file:', error);
-              }
-              
-              try {
-                await zipProject();
-                await sendFile({ filePath: zipFilePath });
-                // Clean up the zip file after sending
-                if (fs.existsSync(zipFilePath)) {
-                  fs.unlinkSync(zipFilePath);
-                }
-                this.sendResponse({
-                  jsonrpc: "2.0",
-                  id: request.id,
-                  result: {
-                    content: [{
-                      type: "text",
-                      text: "Project zipped and sent successfully"
-                    }]
-                  }
-                });
-              } catch (error) {
-                // Clean up zip file if it exists after error
+              {
+                const workingDir = request.params.arguments?.directory || process.cwd();
+                const projectName = path.basename(workingDir);
+                const zipFilePath = path.join(workingDir, `${projectName}-project.zip`);
+
+                // Clean up any existing zip file first
                 try {
                   if (fs.existsSync(zipFilePath)) {
                     fs.unlinkSync(zipFilePath);
                   }
-                } catch (cleanupError) {
-                  console.error('Error cleaning up zip file after error:', cleanupError);
+                } catch (error) {
+                  console.error('Error cleaning up existing zip file:', error);
                 }
-                throw error;
+
+                try {
+                  await zipProject(request.params.arguments);
+                  await sendFile({ filePath: zipFilePath });
+                  // Clean up the zip file after sending
+                  if (fs.existsSync(zipFilePath)) {
+                    fs.unlinkSync(zipFilePath);
+                  }
+                  this.sendResponse({
+                    jsonrpc: "2.0",
+                    id: request.id,
+                    result: {
+                      content: [{
+                        type: "text",
+                        text: "Project zipped and sent successfully"
+                      }]
+                    }
+                  });
+                } catch (error) {
+                  // Clean up zip file if it exists after error
+                  try {
+                    if (fs.existsSync(zipFilePath)) {
+                      fs.unlinkSync(zipFilePath);
+                    }
+                  } catch (cleanupError) {
+                    console.error('Error cleaning up zip file after error:', cleanupError);
+                  }
+                  throw error;
+                }
               }
               break;
 

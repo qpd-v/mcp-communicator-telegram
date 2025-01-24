@@ -1,6 +1,6 @@
 {
   "name": "mcp-communicator-telegram",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "MCP server for communicating with users through Telegram bots",
   "main": "build/index.js",
   "type": "commonjs",

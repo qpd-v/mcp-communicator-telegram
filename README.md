@@ -185,18 +185,23 @@ await use_mcp_tool({
 
 ### zip_project
 
-Creates a zip file of the entire project (respecting .gitignore patterns) and sends it to the user via Telegram.
+Creates a zip file of a project directory (respecting .gitignore patterns) and sends it to the user via Telegram.
 
 Input Schema:
 ```json
 {
   "type": "object",
-  "properties": {},
+  "properties": {
+    "directory": {
+      "type": "string",
+      "description": "Directory to zip (defaults to current working directory)"
+    }
+  },
   "required": []
 }
 ```
 
-Example usage:
+Example usage with default directory (current working directory):
 ```typescript
 await use_mcp_tool({
   server_name: "mcp-communicator-telegram",
@@ -205,8 +210,20 @@ await use_mcp_tool({
 });
 ```
 
+Example usage with specific directory:
+```typescript
+await use_mcp_tool({
+  server_name: "mcp-communicator-telegram",
+  tool_name: "zip_project",
+  arguments: {
+    directory: "/path/to/your/project"
+  }
+});
+```
+
 Features:
-- Creates a single zip file containing all project files
+- Creates a zip file named `[project-name]-project.zip` based on the directory name
+- Can zip any specified directory or the current working directory
 - Respects .gitignore patterns
 - Maintains correct file paths in the archive
 - Automatically cleans up the zip file after sending
@@ -251,4 +268,4 @@ qpd-v
 
 ## Version
 
-0.2.0  # Major version bump for new features: notify_user, send_file, and zip_project tools
+0.2.1  # Major version bump for new features: notify_user, send_file, and zip_project tools
