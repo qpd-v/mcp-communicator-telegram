@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import TelegramBot = require('node-telegram-bot-api');
-import * as fs from 'fs';
 import * as dotenv from 'dotenv';
+import * as fs from 'fs';
+import archiver from 'archiver';
 
 dotenv.config();
 
@@ -168,13 +169,87 @@ async function sendFile(params: { filePath: string }): Promise<void> {
 
   try {
     const fileStream = fs.createReadStream(filePath);
-    await bot.sendDocument(parseInt(validatedChatId), fileStream);
+    await bot.sendDocument(parseInt(validatedChatId), fileStream, {}, {
+      contentType: 'application/octet-stream',
+      filename: path.basename(filePath)
+    });
     console.log('File sent successfully');
   } catch (error: any) {
     console.error('Error in sendFile:', error);
     throw new Error(`Failed to send file: ${error.message}`);
   }
 }
+
+import ignore from 'ignore';
+
+import * as path from 'path';
+
+async function zipProject(): Promise<void> {
+  const workingDir = 'c:/mcp-communicator-telegram';
+  const ig = ignore();
+  const gitignorePath = path.join(workingDir, '.gitignore');
+  const gitignoreContent = fs.existsSync(gitignorePath) ?
+    fs.readFileSync(gitignorePath, 'utf8') :
+    '';
+  ig.add(gitignoreContent);
+
+  const outputPath = path.join(workingDir, 'project.zip');
+  
+  await new Promise<void>((resolve, reject) => {
+    const output = fs.createWriteStream(outputPath);
+    const archive = archiver('zip', {
+      zlib: { level: 9 }
+    });
+
+    output.on('close', () => {
+      console.log(`Zipped ${archive.pointer()} total bytes`);
+      resolve();
+    });
+
+    archive.on('error', (err: Error) => {
+      reject(err);
+    });
+
+    archive.pipe(output);
+
+    // Add files that aren't ignored by .gitignore
+    const addFilesFromDirectory = (dirPath: string) => {
+      const files = fs.readdirSync(dirPath);
+      
+      for (const file of files) {
+        const fullPath = path.join(dirPath, file);
+        const relativePath = path.relative(workingDir, fullPath);
+        
+        // Skip .git directory
+        if (relativePath.startsWith('.git')) {
+          continue;
+        }
+        
+        const stat = fs.statSync(fullPath);
+        if (stat.isDirectory()) {
+          addFilesFromDirectory(fullPath);
+        } else {
+          if (!ig.ignores(relativePath)) {
+            archive.file(fullPath, { name: relativePath });
+          }
+        }
+      }
+    };
+
+    addFilesFromDirectory(workingDir);
+    archive.finalize();
+  });
+
+  // Check if file size exceeds 2GB
+  const stats = fs.statSync(outputPath);
+  const TWO_GB = 2 * 1024 * 1024 * 1024;
+  
+  if (stats.size > TWO_GB) {
+    fs.unlinkSync(outputPath); // Clean up the oversized file
+    throw new Error('File size exceeds 2GB limit. Please implement file splitting or reduce the project size.');
+  }
+}
+
 
 // MCP Server Implementation
 class McpServer {
@@ -289,6 +364,15 @@ class McpServer {
                   },
                   required: ["filePath"]
                 }
+              },
+              {
+                name: "zip_project",
+                description: "Zip the entire project directory and send it to the user",
+                inputSchema: {
+                  type: "object",
+                  properties: {},
+                  required: []
+                }
               }
             ]
           }
@@ -338,6 +422,49 @@ class McpServer {
                   }]
                 }
               });
+              break;
+
+            case 'zip_project':
+              const workingDir = 'c:/mcp-communicator-telegram';
+              const zipFilePath = path.join(workingDir, 'project.zip');
+              
+              // Clean up any existing zip file first
+              try {
+                if (fs.existsSync(zipFilePath)) {
+                  fs.unlinkSync(zipFilePath);
+                }
+              } catch (error) {
+                console.error('Error cleaning up existing zip file:', error);
+              }
+              
+              try {
+                await zipProject();
+                await sendFile({ filePath: zipFilePath });
+                // Clean up the zip file after sending
+                if (fs.existsSync(zipFilePath)) {
+                  fs.unlinkSync(zipFilePath);
+                }
+                this.sendResponse({
+                  jsonrpc: "2.0",
+                  id: request.id,
+                  result: {
+                    content: [{
+                      type: "text",
+                      text: "Project zipped and sent successfully"
+                    }]
+                  }
+                });
+              } catch (error) {
+                // Clean up zip file if it exists after error
+                try {
+                  if (fs.existsSync(zipFilePath)) {
+                    fs.unlinkSync(zipFilePath);
+                  }
+                } catch (cleanupError) {
+                  console.error('Error cleaning up zip file after error:', cleanupError);
+                }
+                throw error;
+              }
               break;
 
             default:
