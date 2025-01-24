@@ -6,6 +6,9 @@ import archiver from 'archiver';
 
 dotenv.config();
 
+// Enable proper file content-type handling
+process.env.NTBA_FIX_350 = '1';
+
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 
