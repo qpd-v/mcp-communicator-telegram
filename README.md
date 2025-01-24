@@ -1,8 +1,18 @@
 # MCP Communicator (Telegram)
 
+[![smithery badge](https://smithery.ai/badge/mcp-communicator-telegram)](https://smithery.ai/server/mcp-communicator-telegram)
+
 An MCP server that enables communication with users through Telegram. This server provides tools to interact with users via a Telegram bot, including asking questions, sending notifications, sharing files, and creating project archives.
 
 ## Installation
+
+### Installing via Smithery
+
+To install MCP Communicator (Telegram) for Claude Desktop automatically via [Smithery](https://smithery.ai/server/mcp-communicator-telegram):
+
+```bash
+npx -y @smithery/cli install mcp-communicator-telegram --client claude
+```
 
 ### Via npm (global)
 
